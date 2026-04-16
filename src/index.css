@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kpmg-blue: #00338D;
+  --color-kpmg-light-blue: #0091DA;
+  --color-kpmg-purple: #483698;
+  --color-kpmg-green: #009A44;
+  --color-kpmg-dark: #1a1a2e;
+  --color-kpmg-gray: #6b7280;
+  --color-kpmg-light-gray: #f3f4f6;
+  --color-kpmg-border: #e5e7eb;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    scroll-behavior: smooth;
+  }
+
+  /* Print styles for certificate */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    body {
+      background: white !important;
+    }
+  }
+}
