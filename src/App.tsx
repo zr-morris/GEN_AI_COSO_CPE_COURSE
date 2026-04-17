@@ -55,9 +55,13 @@ function App() {
   return (
     <CourseContext.Provider value={{ state, dispatch }}>
       <div className="min-h-screen bg-kpmg-light-gray">
-        <NavBar />
+        <div className="no-print">
+          <NavBar />
+        </div>
         <div className="flex">
-          <Sidebar />
+          <div className="no-print">
+            <Sidebar />
+          </div>
           <main ref={mainRef} className="flex-1 overflow-y-auto h-[calc(100vh-52px)] p-6 md:p-8">
             <MainContent scrollRef={mainRef} />
           </main>

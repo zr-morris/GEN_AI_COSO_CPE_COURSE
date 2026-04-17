@@ -48,8 +48,8 @@ export function Certificate() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      {/* Header — hidden when printing */}
+      <div className="mb-8 flex items-center justify-between no-print">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Your Certificate</h1>
           <p className="text-kpmg-gray text-sm">Congratulations on completing the course!</p>

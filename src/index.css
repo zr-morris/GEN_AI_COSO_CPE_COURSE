@@ -16,15 +16,47 @@
   body {
     scroll-behavior: smooth;
   }
+}
 
-  /* Print styles for certificate */
-  @media print {
-    .no-print {
-      display: none !important;
-    }
-    body {
-      background: white !important;
-    }
+/* ── Print: show ONLY the certificate ── */
+@media print {
+  /* Hide everything by default */
+  .no-print,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Reset page chrome */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove layout constraints so certificate fills the page */
+  body * {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* The certificate card itself */
+  #certificate {
+    border: 2px solid #00338D !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Size the page to letter landscape for a nice certificate look */
+  @page {
+    size: letter landscape;
+    margin: 0.5in;
   }
 }
 
