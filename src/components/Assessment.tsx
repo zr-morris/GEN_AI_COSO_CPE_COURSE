@@ -107,7 +107,6 @@ export function Assessment() {
         {questions.map((question, qIndex) => {
           const selectedOption = assessmentAnswers[question.id];
           const isCorrect = isSubmitted && selectedOption === question.correctAnswer;
-          const isWrong = isSubmitted && selectedOption !== question.correctAnswer;
 
           return (
             <div
