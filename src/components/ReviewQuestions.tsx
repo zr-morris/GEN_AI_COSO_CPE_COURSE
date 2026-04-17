@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useCourse, type SectionId } from '../store/courseStore';
 import { courseData } from '../data/courseContent';
 
@@ -13,8 +13,11 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
   const reviewAnswers = state.reviewAnswers[reviewId] || {};
   const isCompleted = state.completedReviews.has(reviewId);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
+  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const allAnswered = questions.every((q) => reviewAnswers[q.id]?.isLocked);
+  const unansweredQuestions = questions.filter((q) => !reviewAnswers[q.id]?.isLocked);
 
   const nextSections: Record<string, SectionId> = {
     review1: 'module2',
@@ -45,13 +48,35 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
         isLocked: true,
       },
     });
+
+    // Hide warning if this was the last unanswered question
+    const remainingAfter = unansweredQuestions.filter((q) => q.id !== questionId);
+    if (remainingAfter.length === 0) {
+      setShowIncompleteWarning(false);
+    }
   };
 
   const handleContinue = () => {
+    if (!allAnswered) {
+      setShowIncompleteWarning(true);
+      return;
+    }
+    setShowIncompleteWarning(false);
     if (!isCompleted) {
       dispatch({ type: 'COMPLETE_REVIEW', reviewId });
     }
     dispatch({ type: 'NAVIGATE', section: nextSections[reviewId] });
+  };
+
+  const scrollToQuestion = (questionId: string) => {
+    const el = questionRefs.current[questionId];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2');
+      }, 2000);
+    }
   };
 
   return (
@@ -86,7 +111,8 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
           return (
             <div
               key={question.id}
-              className={`bg-white border rounded-xl p-6 transition-all duration-200 ${
+              ref={(el) => { questionRefs.current[question.id] = el; }}
+              className={`bg-white border rounded-xl p-6 transition-all duration-300 ${
                 isLocked
                   ? answer.isCorrect
                     ? 'border-kpmg-green/50 bg-kpmg-green/5'
@@ -181,21 +207,66 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
         })}
       </div>
 
-      {/* Continue Button */}
-      {allAnswered && (
-        <div className="border-t border-kpmg-border mt-8 pt-6 pb-8 flex justify-between items-center">
-          <p className="text-sm text-kpmg-gray">
-            All questions answered. You may proceed to the next section.
-          </p>
-          <button
-            onClick={handleContinue}
-            className="inline-flex items-center gap-2 bg-kpmg-blue hover:bg-kpmg-blue/90 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-kpmg-blue/20 transition-all duration-200"
-          >
-            <span>Continue</span>
-            <i className="fas fa-arrow-right"></i>
-          </button>
+      {/* Incomplete Warning Notification */}
+      {showIncompleteWarning && !allAnswered && (
+        <div className="mt-6 bg-amber-50 border border-amber-300 rounded-xl p-5 animate-[fadeIn_0.3s_ease-out]">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
+              <i className="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-amber-800 mb-1">
+                {unansweredQuestions.length === 1
+                  ? '1 question still requires an answer'
+                  : `${unansweredQuestions.length} questions still require answers`}
+              </h4>
+              <p className="text-xs text-amber-700 mb-3">
+                You must answer all review questions before proceeding to the next section.
+              </p>
+              <div className="space-y-1.5">
+                {unansweredQuestions.map((q) => {
+                  const qNum = questions.findIndex((orig) => orig.id === q.id) + 1;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => scrollToQuestion(q.id)}
+                      className="w-full flex items-center gap-2.5 text-left p-2 rounded-lg bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50 transition-all duration-150 group"
+                    >
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 text-xs font-bold flex items-center justify-center group-hover:bg-amber-300 transition-colors">
+                        {qNum}
+                      </span>
+                      <span className="text-xs text-amber-900 leading-snug line-clamp-1 flex-1">
+                        {q.question}
+                      </span>
+                      <i className="fas fa-arrow-up text-amber-400 text-xs group-hover:text-amber-600 transition-colors flex-shrink-0"></i>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Continue Button */}
+      <div className="border-t border-kpmg-border mt-8 pt-6 pb-8 flex justify-between items-center">
+        <p className="text-sm text-kpmg-gray">
+          {allAnswered
+            ? 'All questions answered. You may proceed to the next section.'
+            : `${Object.keys(reviewAnswers).filter((k) => reviewAnswers[k]?.isLocked).length} of ${questions.length} questions completed.`}
+        </p>
+        <button
+          onClick={handleContinue}
+          className={`inline-flex items-center gap-2 font-semibold px-6 py-2.5 rounded-xl transition-all duration-200 ${
+            allAnswered
+              ? 'bg-kpmg-blue hover:bg-kpmg-blue/90 text-white shadow-lg shadow-kpmg-blue/20'
+              : 'bg-kpmg-blue/80 hover:bg-kpmg-blue text-white shadow-md'
+          }`}
+        >
+          <span>Continue</span>
+          <i className="fas fa-arrow-right"></i>
+        </button>
+      </div>
     </div>
   );
 }

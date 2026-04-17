@@ -1,4 +1,4 @@
-import { useReducer, useContext } from 'react';
+import { useReducer, useContext, useEffect, useRef } from 'react';
 import { NavBar } from './components/NavBar';
 import { Sidebar } from './components/Sidebar';
 import { CourseOverview } from './components/CourseOverview';
@@ -13,10 +13,14 @@ import {
   initialProgress,
 } from './store/courseStore';
 
-function MainContent() {
+function MainContent({ scrollRef }: { scrollRef: React.RefObject<HTMLElement | null> }) {
   const context = useContext(CourseContext);
   if (!context) throw new Error('Missing CourseContext');
   const { state } = context;
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+  }, [state.currentSection]);
 
   switch (state.currentSection) {
     case 'overview':
@@ -46,6 +50,7 @@ function MainContent() {
 
 function App() {
   const [state, dispatch] = useReducer(courseReducer, initialProgress);
+  const mainRef = useRef<HTMLElement>(null);
 
   return (
     <CourseContext.Provider value={{ state, dispatch }}>
@@ -53,8 +58,8 @@ function App() {
         <NavBar />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto h-[calc(100vh-52px)] p-6 md:p-8">
-            <MainContent />
+          <main ref={mainRef} className="flex-1 overflow-y-auto h-[calc(100vh-52px)] p-6 md:p-8">
+            <MainContent scrollRef={mainRef} />
           </main>
         </div>
       </div>
