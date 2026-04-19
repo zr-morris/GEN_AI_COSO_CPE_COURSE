@@ -1,4 +1,3 @@
-// src/store/courseStore.ts
 import { createContext, useContext } from 'react';
 
 export type SectionId =
@@ -37,7 +36,6 @@ export interface EvaluationResponse {
 }
 
 export interface CourseProgress {
-  currentSection: SectionId;
   startedAt: string;
   completedModules: Set<string>;
   completedReviews: Set<string>;
@@ -48,20 +46,20 @@ export interface CourseProgress {
   certificateUnlocked: boolean;
 }
 
-export const initialProgress: CourseProgress = {
-  currentSection: 'overview',
-  startedAt: new Date().toISOString(),
-  completedModules: new Set(),
-  completedReviews: new Set(),
-  reviewAnswers: {},
-  assessmentResult: null,
-  assessmentAnswers: {},
-  evaluationResponse: null,
-  certificateUnlocked: false,
-};
+export function createInitialProgress(): CourseProgress {
+  return {
+    startedAt: new Date().toISOString(),
+    completedModules: new Set(),
+    completedReviews: new Set(),
+    reviewAnswers: {},
+    assessmentResult: null,
+    assessmentAnswers: {},
+    evaluationResponse: null,
+    certificateUnlocked: false,
+  };
+}
 
 export type CourseAction =
-  | { type: 'NAVIGATE'; section: SectionId }
   | { type: 'COMPLETE_MODULE'; moduleId: string }
   | { type: 'COMPLETE_REVIEW'; reviewId: string }
   | { type: 'SET_REVIEW_ANSWER'; reviewId: string; questionId: string; answer: ReviewAnswer }
@@ -69,13 +67,15 @@ export type CourseAction =
   | { type: 'SUBMIT_ASSESSMENT'; result: AssessmentResult }
   | { type: 'SUBMIT_EVALUATION'; response: EvaluationResponse }
   | { type: 'UNLOCK_CERTIFICATE' }
-  | { type: 'RESET' };
+  | { type: 'RESET_FOR_RETAKE' }
+  | { type: 'RESET' }
+  // Wholesale state replacement — dispatched by ProgressProvider after the
+  // server hydration completes. Used instead of re-initializing so the
+  // in-flight React tree doesn't have to unmount.
+  | { type: 'HYDRATE'; state: CourseProgress };
 
 export function courseReducer(state: CourseProgress, action: CourseAction): CourseProgress {
   switch (action.type) {
-    case 'NAVIGATE':
-      return { ...state, currentSection: action.section };
-
     case 'COMPLETE_MODULE': {
       const newModules = new Set(state.completedModules);
       newModules.add(action.moduleId);
@@ -90,17 +90,14 @@ export function courseReducer(state: CourseProgress, action: CourseAction): Cour
 
     case 'SET_REVIEW_ANSWER': {
       const reviewAnswers = { ...state.reviewAnswers };
-      if (!reviewAnswers[action.reviewId]) {
-        reviewAnswers[action.reviewId] = {};
-      }
       reviewAnswers[action.reviewId] = {
-        ...reviewAnswers[action.reviewId],
+        ...(reviewAnswers[action.reviewId] ?? {}),
         [action.questionId]: action.answer,
       };
       return { ...state, reviewAnswers };
     }
 
-    case 'SET_ASSESSMENT_ANSWER': {
+    case 'SET_ASSESSMENT_ANSWER':
       return {
         ...state,
         assessmentAnswers: {
@@ -108,13 +105,9 @@ export function courseReducer(state: CourseProgress, action: CourseAction): Cour
           [action.questionId]: action.selectedOption,
         },
       };
-    }
 
     case 'SUBMIT_ASSESSMENT':
-      return {
-        ...state,
-        assessmentResult: action.result,
-      };
+      return { ...state, assessmentResult: action.result };
 
     case 'SUBMIT_EVALUATION':
       return {
@@ -126,8 +119,19 @@ export function courseReducer(state: CourseProgress, action: CourseAction): Cour
     case 'UNLOCK_CERTIFICATE':
       return { ...state, certificateUnlocked: true };
 
+    case 'RESET_FOR_RETAKE':
+      // Clear assessment results & answers but preserve module/review progress
+      return {
+        ...state,
+        assessmentResult: null,
+        assessmentAnswers: {},
+      };
+
     case 'RESET':
-      return { ...initialProgress, startedAt: new Date().toISOString() };
+      return createInitialProgress();
+
+    case 'HYDRATE':
+      return action.state;
 
     default:
       return state;
@@ -138,20 +142,15 @@ export function getProgressMilestones(state: CourseProgress): { completed: numbe
   let completed = 0;
   const total = 8; // 3 modules + 3 reviews + assessment + evaluation
 
-  // Modules
   if (state.completedModules.has('module1')) completed++;
   if (state.completedModules.has('module2')) completed++;
   if (state.completedModules.has('module3')) completed++;
 
-  // Reviews
   if (state.completedReviews.has('review1')) completed++;
   if (state.completedReviews.has('review2')) completed++;
   if (state.completedReviews.has('review3')) completed++;
 
-  // Assessment
   if (state.assessmentResult?.passed) completed++;
-
-  // Evaluation
   if (state.evaluationResponse) completed++;
 
   return { completed, total };
@@ -160,7 +159,6 @@ export function getProgressMilestones(state: CourseProgress): { completed: numbe
 export function canAccessSection(state: CourseProgress, section: SectionId): boolean {
   switch (section) {
     case 'overview':
-      return true;
     case 'module1':
       return true;
     case 'review1':
@@ -183,6 +181,20 @@ export function canAccessSection(state: CourseProgress, section: SectionId): boo
       return false;
   }
 }
+
+/** Path mapping — kept here so routes and store stay in sync. */
+export const sectionPaths: Record<SectionId, string> = {
+  overview: '/',
+  module1: '/module/1',
+  module2: '/module/2',
+  module3: '/module/3',
+  review1: '/review/1',
+  review2: '/review/2',
+  review3: '/review/3',
+  assessment: '/assessment',
+  evaluation: '/evaluation',
+  certificate: '/certificate',
+};
 
 export interface CourseContextType {
   state: CourseProgress;

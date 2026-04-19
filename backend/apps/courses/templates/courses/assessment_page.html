@@ -1,0 +1,19 @@
+{% extends "courses/_base.html" %}
+
+{% block content %}
+  <h1>{{ page.title }}</h1>
+  {{ page.intro|safe }}
+  {% if page.time_limit_minutes %}<p><em>Time limit: {{ page.time_limit_minutes }} minutes</em></p>{% endif %}
+
+  <p><strong>{{ page.questions.count }} question(s).</strong></p>
+
+  {% for q in page.questions.all %}
+    <div style="margin: 1.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 6px;">
+      <p><strong>Q{{ forloop.counter }}.</strong> {{ q.text|safe }}</p>
+      <ol type="a">
+        {% for o in q.options.all %}<li>{{ o.text }}</li>{% endfor %}
+      </ol>
+      {% if q.module_reference %}<p><small>Reference: {{ q.module_reference }}</small></p>{% endif %}
+    </div>
+  {% endfor %}
+{% endblock %}

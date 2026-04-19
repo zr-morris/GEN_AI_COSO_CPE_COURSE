@@ -1,0 +1,21 @@
+{# Minimal placeholder. The React SPA at /src/ is the real renderer; #}
+{# this template just keeps "View live" links in Wagtail admin from 500-ing. #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ page.title }}{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    .notice { background: #fff8e1; border-left: 4px solid #f9a825; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    a { color: #00338D; }
+  </style>
+</head>
+<body>
+  <div class="notice">
+    <strong>Preview placeholder.</strong> The learner-facing UI is the React SPA;
+    this page is just a server-rendered preview for SMEs. Frontend wiring lands in Phase 3.
+  </div>
+  {% block content %}{% endblock %}
+</body>
+</html>

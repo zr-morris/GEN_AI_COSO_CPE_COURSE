@@ -1,8 +1,10 @@
-import { useCourse } from '../store/courseStore';
-import { courseData } from '../data/courseContent';
+import { useNavigate } from 'react-router-dom';
+import { useCourseData } from '../store/courseDataContext';
+import { sectionPaths } from '../store/courseStore';
 
 export function CourseOverview() {
-  const { dispatch } = useCourse();
+  const navigate = useNavigate();
+  const courseData = useCourseData();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -32,7 +34,7 @@ export function CourseOverview() {
         <div className="bg-white border border-kpmg-border rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-kpmg-blue/10 flex items-center justify-center">
-              <i className="fas fa-book-open text-kpmg-blue"></i>
+              <i className="fas fa-book-open text-kpmg-blue" aria-hidden="true"></i>
             </div>
             <div>
               <p className="text-xs text-kpmg-gray">Format</p>
@@ -43,7 +45,7 @@ export function CourseOverview() {
         <div className="bg-white border border-kpmg-border rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-kpmg-green/10 flex items-center justify-center">
-              <i className="fas fa-award text-kpmg-green"></i>
+              <i className="fas fa-award text-kpmg-green" aria-hidden="true"></i>
             </div>
             <div>
               <p className="text-xs text-kpmg-gray">CPE Credits</p>
@@ -54,7 +56,7 @@ export function CourseOverview() {
         <div className="bg-white border border-kpmg-border rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-kpmg-purple/10 flex items-center justify-center">
-              <i className="fas fa-clipboard-check text-kpmg-purple"></i>
+              <i className="fas fa-clipboard-check text-kpmg-purple" aria-hidden="true"></i>
             </div>
             <div>
               <p className="text-xs text-kpmg-gray">Passing Score</p>
@@ -67,7 +69,7 @@ export function CourseOverview() {
       {/* Learning Objectives */}
       <div className="bg-white border border-kpmg-border rounded-xl p-6 mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <i className="fas fa-bullseye text-kpmg-blue"></i>
+          <i className="fas fa-bullseye text-kpmg-blue" aria-hidden="true"></i>
           Learning Objectives
         </h2>
         <div className="space-y-3">
@@ -85,7 +87,7 @@ export function CourseOverview() {
       {/* Course Structure */}
       <div className="bg-white border border-kpmg-border rounded-xl p-6 mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <i className="fas fa-sitemap text-kpmg-purple"></i>
+          <i className="fas fa-sitemap text-kpmg-purple" aria-hidden="true"></i>
           Course Structure
         </h2>
         <div className="space-y-4">
@@ -102,7 +104,7 @@ export function CourseOverview() {
           ))}
           <div className="flex items-start gap-4 p-4 bg-kpmg-blue/5 rounded-lg border border-kpmg-blue/10">
             <div className="w-10 h-10 rounded-lg bg-kpmg-purple text-white flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-clipboard-list text-sm"></i>
+              <i className="fas fa-clipboard-list text-sm" aria-hidden="true"></i>
             </div>
             <div>
               <h3 className="font-semibold text-sm text-gray-900">Final Assessment</h3>
@@ -117,11 +119,12 @@ export function CourseOverview() {
       {/* Begin Button */}
       <div className="text-center pb-8">
         <button
-          onClick={() => dispatch({ type: 'NAVIGATE', section: 'module1' })}
-          className="inline-flex items-center gap-2 bg-kpmg-blue hover:bg-kpmg-blue/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg shadow-kpmg-blue/25 transition-all duration-200 hover:shadow-xl hover:shadow-kpmg-blue/30 hover:-translate-y-0.5"
+          type="button"
+          onClick={() => navigate(sectionPaths.module1)}
+          className="inline-flex items-center gap-2 bg-kpmg-blue hover:bg-kpmg-blue/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg shadow-kpmg-blue/25 transition-all duration-200 hover:shadow-xl hover:shadow-kpmg-blue/30 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue focus-visible:ring-offset-2"
         >
           <span>Begin Course</span>
-          <i className="fas fa-arrow-right"></i>
+          <i className="fas fa-arrow-right" aria-hidden="true"></i>
         </button>
       </div>
     </div>
