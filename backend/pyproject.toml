@@ -1,0 +1,76 @@
+[project]
+name = "coso-cpe-backend"
+version = "0.1.0"
+description = "Backend for the COSO CPE internal training course (Django + Wagtail + DRF)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "django>=5.2,<5.3",
+  "wagtail>=6.4,<7.0",
+  "djangorestframework>=3.15",
+  "drf-spectacular>=0.28",
+  "django-cors-headers>=4.6",
+  "django-environ>=0.12",
+  "psycopg[binary]>=3.2",
+  "gunicorn>=23.0",
+  "whitenoise>=6.8",
+  "pillow>=11.0",
+  # Microsoft Authentication Library (MSAL) — used for the Entra ID / Azure AD
+  # OAuth2 authorization-code flow at /api/auth/microsoft/login|callback.
+  "msal>=1.31",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-django>=4.9",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+  "mypy>=1.14",
+  "django-stubs>=5.1",
+  "djangorestframework-stubs>=3.15",
+  "factory-boy>=3.3",
+  "ipython>=8.30",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W",   # pycodestyle / pyflakes
+  "I",             # isort
+  "B",             # bugbear
+  "UP",            # pyupgrade
+  "DJ",            # flake8-django
+  "RUF",           # ruff-specific
+]
+ignore = [
+  "E501",          # line length handled by formatter
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+strict = true
+warn_unused_ignores = true
+exclude = ["migrations/"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings.dev"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "-ra --strict-markers --strict-config"
+testpaths = ["apps", "config"]
+filterwarnings = [
+  # Django 5.2 says FORMS_URLFIELD_ASSUME_HTTPS is transitional; we still need
+  # it because Wagtail emits the underlying warning without it. Silence here so
+  # CI is clean — revisit when Wagtail catches up.
+  "ignore:The FORMS_URLFIELD_ASSUME_HTTPS transitional setting is deprecated.:DeprecationWarning",
+]

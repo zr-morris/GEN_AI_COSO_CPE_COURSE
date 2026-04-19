@@ -1,29 +1,32 @@
 import { useState, useRef } from 'react';
-import { useCourse, type SectionId } from '../store/courseStore';
-import { courseData } from '../data/courseContent';
+import { useNavigate } from 'react-router-dom';
+import { sectionPaths, useCourse, type SectionId } from '../store/courseStore';
+import { useCourseData } from '../store/courseDataContext';
 
 interface ReviewQuestionsProps {
   reviewId: 'review1' | 'review2' | 'review3';
 }
 
+const nextSections: Record<string, SectionId> = {
+  review1: 'module2',
+  review2: 'module3',
+  review3: 'assessment',
+};
+
 export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
   const { state, dispatch } = useCourse();
+  const navigate = useNavigate();
+  const courseData = useCourseData();
   const reviewIndex = parseInt(reviewId.replace('review', '')) - 1;
   const questions = courseData.reviewQuestions[reviewId] || [];
   const reviewAnswers = state.reviewAnswers[reviewId] || {};
   const isCompleted = state.completedReviews.has(reviewId);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
-  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const questionRefs = useRef<Record<string, HTMLLIElement | null>>({});
 
   const allAnswered = questions.every((q) => reviewAnswers[q.id]?.isLocked);
   const unansweredQuestions = questions.filter((q) => !reviewAnswers[q.id]?.isLocked);
-
-  const nextSections: Record<string, SectionId> = {
-    review1: 'module2',
-    review2: 'module3',
-    review3: 'assessment',
-  };
 
   const handleSelect = (questionId: string, optionId: string) => {
     if (reviewAnswers[questionId]?.isLocked) return;
@@ -49,7 +52,6 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
       },
     });
 
-    // Hide warning if this was the last unanswered question
     const remainingAfter = unansweredQuestions.filter((q) => q.id !== questionId);
     if (remainingAfter.length === 0) {
       setShowIncompleteWarning(false);
@@ -65,7 +67,7 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
     if (!isCompleted) {
       dispatch({ type: 'COMPLETE_REVIEW', reviewId });
     }
-    dispatch({ type: 'NAVIGATE', section: nextSections[reviewId] });
+    navigate(sectionPaths[nextSections[reviewId]]);
   };
 
   const scrollToQuestion = (questionId: string) => {
@@ -81,7 +83,6 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <span className="bg-kpmg-purple text-white text-xs font-bold px-3 py-1 rounded-full">
@@ -89,7 +90,8 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
           </span>
           {isCompleted && (
             <span className="bg-kpmg-green/10 text-kpmg-green text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-              <i className="fas fa-check-circle"></i> Completed
+              <i className="fas fa-check-circle" aria-hidden="true"></i>
+              <span>Completed</span>
             </span>
           )}
         </div>
@@ -97,19 +99,21 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
           Module {reviewIndex + 1} Review Questions
         </h1>
         <p className="text-kpmg-gray text-sm">
-          Answer all {questions.length} questions to continue. Select an answer and click "Submit" to lock your response.
+          Answer all {questions.length} questions to continue. Select an answer and
+          click "Submit" to lock your response.
         </p>
       </div>
 
-      {/* Questions */}
-      <div className="space-y-6">
+      <ol className="space-y-6 list-none p-0">
         {questions.map((question, qIndex) => {
           const answer = reviewAnswers[question.id];
           const isLocked = answer?.isLocked;
           const selectedOption = isLocked ? answer.selectedOption : selectedOptions[question.id];
+          const questionLabelId = `q-${question.id}-label`;
+          const feedbackId = `q-${question.id}-feedback`;
 
           return (
-            <div
+            <li
               key={question.id}
               ref={(el) => { questionRefs.current[question.id] = el; }}
               className={`bg-white border rounded-xl p-6 transition-all duration-300 ${
@@ -121,15 +125,27 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
               }`}
             >
               <div className="flex items-start gap-3 mb-4">
-                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-kpmg-blue text-white text-xs font-bold flex items-center justify-center">
+                <span
+                  className="flex-shrink-0 w-7 h-7 rounded-full bg-kpmg-blue text-white text-xs font-bold flex items-center justify-center"
+                  aria-hidden="true"
+                >
                   {qIndex + 1}
                 </span>
-                <p className="text-sm font-semibold text-gray-900 leading-relaxed pt-0.5">
+                <p
+                  id={questionLabelId}
+                  className="text-sm font-semibold text-gray-900 leading-relaxed pt-0.5"
+                >
+                  <span className="sr-only">Question {qIndex + 1}: </span>
                   {question.question}
                 </p>
               </div>
 
-              <div className="space-y-2 ml-10">
+              <div
+                role="radiogroup"
+                aria-labelledby={questionLabelId}
+                aria-describedby={isLocked ? feedbackId : undefined}
+                className="space-y-2 ml-10"
+              >
                 {question.options.map((option) => {
                   const isSelected = selectedOption === option.id;
                   const isCorrectOption = option.id === question.correctAnswer;
@@ -151,19 +167,25 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
                   return (
                     <button
                       key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       onClick={() => handleSelect(question.id, option.id)}
                       disabled={isLocked}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all duration-150 ${optionStyles}`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue focus-visible:ring-offset-2 ${optionStyles}`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                        isLocked && isCorrectOption
-                          ? 'border-kpmg-green bg-kpmg-green'
-                          : isLocked && isSelected && !answer.isCorrect
-                            ? 'border-red-400 bg-red-400'
-                            : isSelected
-                              ? 'border-kpmg-blue bg-kpmg-blue'
-                              : 'border-gray-300'
-                      }`}>
+                      <div
+                        aria-hidden="true"
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                          isLocked && isCorrectOption
+                            ? 'border-kpmg-green bg-kpmg-green'
+                            : isLocked && isSelected && !answer.isCorrect
+                              ? 'border-red-400 bg-red-400'
+                              : isSelected
+                                ? 'border-kpmg-blue bg-kpmg-blue'
+                                : 'border-gray-300'
+                        }`}
+                      >
                         {(isSelected || (isLocked && isCorrectOption)) && (
                           <i className={`fas text-[8px] text-white ${
                             isLocked && isCorrectOption ? 'fa-check' : isLocked && isSelected && !answer.isCorrect ? 'fa-times' : 'fa-circle'
@@ -176,12 +198,13 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
                 })}
               </div>
 
-              {/* Submit / Feedback */}
               {!isLocked && selectedOption && (
                 <div className="mt-4 ml-10">
                   <button
+                    type="button"
                     onClick={() => handleSubmitAnswer(question.id)}
-                    className="bg-kpmg-blue hover:bg-kpmg-blue/90 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+                    aria-label={`Submit answer for question ${qIndex + 1}`}
+                    className="bg-kpmg-blue hover:bg-kpmg-blue/90 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue focus-visible:ring-offset-2"
                   >
                     Submit Answer
                   </button>
@@ -189,9 +212,17 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
               )}
 
               {isLocked && (
-                <div className={`mt-4 ml-10 p-4 rounded-lg ${answer.isCorrect ? 'bg-kpmg-green/10' : 'bg-red-50'}`}>
+                <div
+                  id={feedbackId}
+                  role="status"
+                  aria-live="polite"
+                  className={`mt-4 ml-10 p-4 rounded-lg ${answer.isCorrect ? 'bg-kpmg-green/10' : 'bg-red-50'}`}
+                >
                   <div className="flex items-center gap-2 mb-1">
-                    <i className={`fas ${answer.isCorrect ? 'fa-check-circle text-kpmg-green' : 'fa-times-circle text-red-500'}`}></i>
+                    <i
+                      className={`fas ${answer.isCorrect ? 'fa-check-circle text-kpmg-green' : 'fa-times-circle text-red-500'}`}
+                      aria-hidden="true"
+                    ></i>
                     <span className={`text-sm font-semibold ${answer.isCorrect ? 'text-kpmg-green' : 'text-red-600'}`}>
                       {answer.isCorrect ? 'Correct!' : 'Incorrect'}
                     </span>
@@ -202,24 +233,26 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
                   <p className="text-xs text-kpmg-gray mt-2 italic">{question.explanation}</p>
                 </div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
-      {/* Incomplete Warning Notification */}
       {showIncompleteWarning && !allAnswered && (
-        <div className="mt-6 bg-amber-50 border border-amber-300 rounded-xl p-5 animate-[fadeIn_0.3s_ease-out]">
+        <div
+          role="alert"
+          className="mt-6 bg-amber-50 border border-amber-300 rounded-xl p-5 animate-[fadeIn_0.3s_ease-out]"
+        >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
-              <i className="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
+              <i className="fas fa-exclamation-triangle text-amber-600 text-sm" aria-hidden="true"></i>
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-amber-800 mb-1">
+              <h2 className="text-sm font-bold text-amber-800 mb-1">
                 {unansweredQuestions.length === 1
                   ? '1 question still requires an answer'
                   : `${unansweredQuestions.length} questions still require answers`}
-              </h4>
+              </h2>
               <p className="text-xs text-amber-700 mb-3">
                 You must answer all review questions before proceeding to the next section.
               </p>
@@ -229,16 +262,21 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
                   return (
                     <button
                       key={q.id}
+                      type="button"
                       onClick={() => scrollToQuestion(q.id)}
-                      className="w-full flex items-center gap-2.5 text-left p-2 rounded-lg bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50 transition-all duration-150 group"
+                      aria-label={`Jump to question ${qNum}: ${q.question}`}
+                      className="w-full flex items-center gap-2.5 text-left p-2 rounded-lg bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50 transition-all duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                     >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 text-xs font-bold flex items-center justify-center group-hover:bg-amber-300 transition-colors">
+                      <span
+                        aria-hidden="true"
+                        className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 text-xs font-bold flex items-center justify-center group-hover:bg-amber-300 transition-colors"
+                      >
                         {qNum}
                       </span>
                       <span className="text-xs text-amber-900 leading-snug line-clamp-1 flex-1">
                         {q.question}
                       </span>
-                      <i className="fas fa-arrow-up text-amber-400 text-xs group-hover:text-amber-600 transition-colors flex-shrink-0"></i>
+                      <i className="fas fa-arrow-up text-amber-400 text-xs group-hover:text-amber-600 transition-colors flex-shrink-0" aria-hidden="true"></i>
                     </button>
                   );
                 })}
@@ -248,7 +286,6 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
         </div>
       )}
 
-      {/* Continue Button */}
       <div className="border-t border-kpmg-border mt-8 pt-6 pb-8 flex justify-between items-center">
         <p className="text-sm text-kpmg-gray">
           {allAnswered
@@ -256,15 +293,16 @@ export function ReviewQuestions({ reviewId }: ReviewQuestionsProps) {
             : `${Object.keys(reviewAnswers).filter((k) => reviewAnswers[k]?.isLocked).length} of ${questions.length} questions completed.`}
         </p>
         <button
+          type="button"
           onClick={handleContinue}
-          className={`inline-flex items-center gap-2 font-semibold px-6 py-2.5 rounded-xl transition-all duration-200 ${
+          className={`inline-flex items-center gap-2 font-semibold px-6 py-2.5 rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue focus-visible:ring-offset-2 ${
             allAnswered
               ? 'bg-kpmg-blue hover:bg-kpmg-blue/90 text-white shadow-lg shadow-kpmg-blue/20'
               : 'bg-kpmg-blue/80 hover:bg-kpmg-blue text-white shadow-md'
           }`}
         >
           <span>Continue</span>
-          <i className="fas fa-arrow-right"></i>
+          <i className="fas fa-arrow-right" aria-hidden="true"></i>
         </button>
       </div>
     </div>

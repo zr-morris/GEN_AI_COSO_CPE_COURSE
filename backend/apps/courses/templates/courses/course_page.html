@@ -1,0 +1,22 @@
+{% extends "courses/_base.html" %}
+
+{% block content %}
+  <h1>{{ page.title }}</h1>
+  {% if page.subtitle %}<p><em>{{ page.subtitle }}</em></p>{% endif %}
+  {{ page.description|safe }}
+
+  <p><strong>CPE credits:</strong> {{ page.cpe_credits }} &middot;
+     <strong>Passing score:</strong> {{ page.passing_score }}%</p>
+
+  <h2>Learning objectives</h2>
+  <ul>
+    {% for lo in page.learning_objectives.all %}<li>{{ lo.text }}</li>{% endfor %}
+  </ul>
+
+  <h2>Course outline</h2>
+  <ol>
+    {% for child in page.get_children.live %}
+      <li><a href="{{ child.url }}">{{ child.title }}</a></li>
+    {% endfor %}
+  </ol>
+{% endblock %}

@@ -1,5 +1,6 @@
-import { useCourse } from '../store/courseStore';
-import { courseData } from '../data/courseContent';
+import { useNavigate } from 'react-router-dom';
+import { sectionPaths, useCourse } from '../store/courseStore';
+import { useCourseData } from '../store/courseDataContext';
 
 function formatTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -17,13 +18,18 @@ function formatDate(dateString: string): string {
 }
 
 export function Certificate() {
-  const { state, dispatch } = useCourse();
+  const { state } = useCourse();
+  const navigate = useNavigate();
+  const courseData = useCourseData();
 
   if (!state.certificateUnlocked || !state.assessmentResult) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-16">
-          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+          <div
+            aria-hidden="true"
+            className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6"
+          >
             <i className="fas fa-lock text-3xl text-gray-300"></i>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">Certificate Locked</h1>
@@ -31,10 +37,11 @@ export function Certificate() {
             Complete all course modules, pass the assessment, and submit your evaluation to unlock your CPE certificate.
           </p>
           <button
-            onClick={() => dispatch({ type: 'NAVIGATE', section: 'overview' })}
-            className="text-kpmg-blue hover:text-kpmg-blue/80 text-sm font-medium"
+            type="button"
+            onClick={() => navigate(sectionPaths.overview)}
+            className="text-kpmg-blue hover:text-kpmg-blue/80 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue rounded"
           >
-            <i className="fas fa-arrow-left mr-1"></i>
+            <i className="fas fa-arrow-left mr-1" aria-hidden="true"></i>
             Return to Overview
           </button>
         </div>
@@ -55,10 +62,11 @@ export function Certificate() {
           <p className="text-kpmg-gray text-sm">Congratulations on completing the course!</p>
         </div>
         <button
+          type="button"
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 bg-kpmg-blue hover:bg-kpmg-blue/90 text-white font-medium px-5 py-2.5 rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 bg-kpmg-blue hover:bg-kpmg-blue/90 text-white font-medium px-5 py-2.5 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpmg-blue focus-visible:ring-offset-2"
         >
-          <i className="fas fa-print"></i>
+          <i className="fas fa-print" aria-hidden="true"></i>
           <span>Print Certificate</span>
         </button>
       </div>
@@ -72,7 +80,7 @@ export function Certificate() {
           {/* Logo & Title */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-6">
-              <i className="fas fa-graduation-cap text-3xl text-kpmg-blue"></i>
+              <i className="fas fa-graduation-cap text-3xl text-kpmg-blue" aria-hidden="true"></i>
               <span className="text-3xl font-bold text-kpmg-blue tracking-tight">KPMG</span>
             </div>
             <h2 className="text-lg font-bold text-kpmg-gray uppercase tracking-widest mb-1">
@@ -129,27 +137,27 @@ export function Certificate() {
             <h4 className="text-sm font-bold text-gray-900 mb-3">CPE Credit Information</h4>
             <div className="grid md:grid-cols-2 gap-3 text-xs text-gray-600">
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>Field of Study: Auditing</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>Instructional Method: Self-Study</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>Prerequisites: None</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>Program Level: Basic</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>Advance Preparation: None Required</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-check text-kpmg-green mt-0.5"></i>
+                <i className="fas fa-check text-kpmg-green mt-0.5" aria-hidden="true"></i>
                 <span>CPE Credits: {courseData.cpeCredits} (based on 50-minute hour)</span>
               </div>
             </div>

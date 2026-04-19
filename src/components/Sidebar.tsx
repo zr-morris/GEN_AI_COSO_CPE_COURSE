@@ -1,4 +1,11 @@
-import { useCourse, canAccessSection, type SectionId } from '../store/courseStore';
+import { NavLink } from 'react-router-dom';
+import {
+  canAccessSection,
+  sectionPaths,
+  useCourse,
+  type CourseProgress,
+  type SectionId,
+} from '../store/courseStore';
 
 interface SidebarItem {
   id: SectionId;
@@ -20,7 +27,14 @@ const sidebarItems: SidebarItem[] = [
   { id: 'certificate', label: 'Certificate', icon: 'fa-award', group: 'complete' },
 ];
 
-function isCompleted(state: ReturnType<typeof useCourse>['state'], id: SectionId): boolean {
+const groupLabels: Record<string, string> = {
+  start: 'Getting Started',
+  learn: 'Course Content',
+  assess: 'Assessment',
+  complete: 'Completion',
+};
+
+function isCompleted(state: CourseProgress, id: SectionId): boolean {
   switch (id) {
     case 'module1': return state.completedModules.has('module1');
     case 'module2': return state.completedModules.has('module2');
@@ -36,32 +50,38 @@ function isCompleted(state: ReturnType<typeof useCourse>['state'], id: SectionId
 }
 
 export function Sidebar() {
-  const { state, dispatch } = useCourse();
-
-  const handleClick = (id: SectionId) => {
-    if (canAccessSection(state, id)) {
-      dispatch({ type: 'NAVIGATE', section: id });
-    }
-  };
-
-  const groupLabels: Record<string, string> = {
-    start: 'Getting Started',
-    learn: 'Course Content',
-    assess: 'Assessment',
-    complete: 'Completion',
-  };
-
-  let currentGroup = '';
+  const { state } = useCourse();
 
   return (
-    <aside className="w-64 min-w-64 bg-white border-r border-kpmg-border overflow-y-auto h-[calc(100vh-52px)] sticky top-[52px]">
+    <aside
+      aria-label="Course navigation"
+      className="w-64 min-w-64 bg-white border-r border-kpmg-border overflow-y-auto h-[calc(100vh-52px)] sticky top-[52px]"
+    >
       <nav className="py-4">
-        {sidebarItems.map((item) => {
+        {sidebarItems.map((item, index) => {
           const accessible = canAccessSection(state, item.id);
           const completed = isCompleted(state, item.id);
-          const active = state.currentSection === item.id;
-          const showGroup = item.group !== currentGroup;
-          if (showGroup) currentGroup = item.group;
+          const showGroup = index === 0 || sidebarItems[index - 1].group !== item.group;
+
+          const content = (active: boolean) => (
+            <>
+              <div className="w-6 flex justify-center" aria-hidden="true">
+                {completed ? (
+                  <i className="fas fa-check-circle text-kpmg-green"></i>
+                ) : !accessible ? (
+                  <i className="fas fa-lock text-gray-300 text-xs"></i>
+                ) : (
+                  <i className={`fas ${item.icon} ${active ? 'text-kpmg-blue' : 'text-gray-400'}`}></i>
+                )}
+              </div>
+              <span className="truncate">{item.label}</span>
+              {completed && (
+                <span className="ml-auto text-[10px] font-medium text-kpmg-green bg-kpmg-green/10 px-1.5 py-0.5 rounded-full">
+                  Done
+                </span>
+              )}
+            </>
+          );
 
           return (
             <div key={item.id}>
@@ -72,35 +92,30 @@ export function Sidebar() {
                   </span>
                 </div>
               )}
-              <button
-                onClick={() => handleClick(item.id)}
-                disabled={!accessible}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150
-                  ${active
-                    ? 'bg-kpmg-blue/10 text-kpmg-blue border-r-3 border-kpmg-blue font-semibold'
-                    : accessible
-                      ? 'text-gray-700 hover:bg-gray-50 hover:text-kpmg-blue'
-                      : 'text-gray-300 cursor-not-allowed'
+              {accessible ? (
+                <NavLink
+                  to={sectionPaths[item.id]}
+                  end={item.id === 'overview'}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 ${
+                      isActive
+                        ? 'bg-kpmg-blue/10 text-kpmg-blue border-r-3 border-kpmg-blue font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-kpmg-blue'
+                    }`
                   }
-                `}
-              >
-                <div className="w-6 flex justify-center">
-                  {completed ? (
-                    <i className="fas fa-check-circle text-kpmg-green"></i>
-                  ) : !accessible ? (
-                    <i className="fas fa-lock text-gray-300 text-xs"></i>
-                  ) : (
-                    <i className={`fas ${item.icon} ${active ? 'text-kpmg-blue' : 'text-gray-400'}`}></i>
-                  )}
-                </div>
-                <span className="truncate">{item.label}</span>
-                {completed && (
-                  <span className="ml-auto text-[10px] font-medium text-kpmg-green bg-kpmg-green/10 px-1.5 py-0.5 rounded-full">
-                    Done
-                  </span>
-                )}
-              </button>
+                >
+                  {({ isActive }) => content(isActive)}
+                </NavLink>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
+                >
+                  {content(false)}
+                </button>
+              )}
             </div>
           );
         })}

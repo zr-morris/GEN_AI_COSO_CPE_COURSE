@@ -1,0 +1,16 @@
+{% extends "courses/_base.html" %}
+
+{% block content %}
+  <h1>{{ page.title }}</h1>
+  {{ page.intro|safe }}
+
+  {% for q in page.questions.all %}
+    <div style="margin: 1.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 6px;">
+      <p><strong>Q{{ forloop.counter }}.</strong> {{ q.text|safe }}</p>
+      <ol type="a">
+        {% for o in q.options.all %}<li>{{ o.text }}</li>{% endfor %}
+      </ol>
+      <p><small><strong>Correct:</strong> {{ q.correct_answer|upper }}</small></p>
+    </div>
+  {% endfor %}
+{% endblock %}

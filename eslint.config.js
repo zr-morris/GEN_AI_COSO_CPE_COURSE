@@ -6,7 +6,13 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    // Backend Python project (Django + Wagtail). It lives in a sibling folder
+    // with its own tooling (ruff, pytest); ESLint should not walk into its
+    // virtualenv or the static JS shipped by Django/Wagtail/drf-spectacular.
+    'backend/**',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
